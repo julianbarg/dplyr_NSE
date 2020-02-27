@@ -1,0 +1,55 @@
+---
+title: "dplyr non-standard evaluation for programming"
+author: "Julian Barg"
+date: "27/02/2020"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r tidyverse, message=FALSE}
+library(tidyverse)
+```
+
+I am using mtcars for this vignette.
+
+```{r mtcars}
+glimpse(mtcars)
+```
+
+## dplyr non-standard evaluation for programming
+
+I created this vignette after noticing a lack of high-quality guides on how to use non-standard evaluation (NSE) for programming with dplyr. A vignette by Hadley Wickham and his team exists (https://dplyr.tidyverse.org/articles/programming.html), but unfortunately it is unusable because it starts off by showing a lot of way of *how not to use NSE for dplyr*. Every time I try to use the vignette as a reference material, I end up using some code examples of how not to do NSE for dplyr before finding the right code example. Hence, this vignette will not include any wrong code examples. The second purpose of this vignette is to be brief, in order for the relevant information to be quick to find.
+
+### Variable ingestion and usage with `enquo`
+
+`enquo` provides a quosure that stores the input rather than evaluating it. Execution is delayed until the final computation. `enquo` thus is ideal for creating functions with dplyr.
+
+#### bang-bang operator (`!!`)
+
+Use the bang-bang operator for a literal evaluation of the quosure.
+
+```{r enquo_bang-bang}
+filter_by <- function(df, x, y) {
+    x <- enquo(x)
+    df %>%
+        filter(!!x == 6)
+}
+
+filter_by(mtcars, cyl, 6)
+```
+
+#### Obtaining input as string with quo_name
+
+```{r enquo_quo_name}
+describe_variable <- function(df, variable, description) {
+    variable <- enquo(variable)
+    varname <- paste0(quo_name(variable), "_described")
+    df %>%
+        mutate(!! varname := paste(!! variable, description))
+}
+
+head(describe_variable(mtcars, cyl, "cylinders"))[-1:-5]
+```
